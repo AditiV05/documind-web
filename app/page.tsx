@@ -5,9 +5,11 @@ import {
   uploadPDF,
   extractAndChunk,
   askQuestion,
+  askQuestionStream,
   UploadResponse,
   ChunkResponse,
   AnswerResponse,
+  AnswerSource,
 } from "./lib/api";
 
 export default function Home() {
@@ -20,6 +22,8 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<AnswerResponse | null>(null);
   const [isAsking, setIsAsking] = useState(false);
+  const [streamedAnswer, setStreamedAnswer] = useState("");
+  const [streamedSources, setStreamedSources] = useState<AnswerSource[]>([]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0] ?? null;
@@ -63,12 +67,17 @@ export default function Home() {
     setIsAsking(true);
     setError(null);
     setAnswer(null);
+    setStreamedAnswer("");
+    setStreamedSources([]);
     try {
-      const result = await askQuestion(question);
-      setAnswer(result);
+      await askQuestionStream(
+        question,
+        (token) => setStreamedAnswer((prev) => prev + token),
+        (sources) => setStreamedSources(sources),
+        () => setIsAsking(false),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Request failed");
-    } finally {
       setIsAsking(false);
     }
   }
@@ -153,15 +162,21 @@ export default function Home() {
             {isAsking ? "Thinking..." : "Ask"}
           </button>
 
-          {answer && (
+          {(streamedAnswer || isAsking) && (
             <div className="mt-4 text-sm bg-gray-50 border border-gray-200 rounded p-4">
-              <p className="whitespace-pre-wrap">{answer.answer}</p>
-              {answer.sources.length > 0 && (
+              <p className="whitespace-pre-wrap">
+                {streamedAnswer}
+                {isAsking && <span className="text-gray-400">▋</span>}
+              </p>
+              {streamedSources.length > 0 && (
                 <p className="mt-3 text-xs text-gray-500">
-                  Sources: {answer.sources.length} chunk
-                  {answer.sources.length > 1 ? "s" : ""} (page
-                  {answer.sources.length > 1 ? "s" : ""}{" "}
-                  {[...new Set(answer.sources.map((s) => s.page_number))].join(
+                  Sources: {streamedSources.length} chunk
+                  {streamedSources.length > 1 ? "s" : ""} (page
+                  {[...new Set(streamedSources.map((s) => s.page_number))]
+                    .length > 1
+                    ? "s"
+                    : ""}{" "}
+                  {[...new Set(streamedSources.map((s) => s.page_number))].join(
                     ", ",
                   )}
                   )

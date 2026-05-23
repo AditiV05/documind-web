@@ -83,3 +83,52 @@ export async function askQuestion(query: string): Promise<AnswerResponse> {
 
   return res.json();
 }
+
+// Ask a question with streaming. Calls onToken for each text token,
+// onSources when sources arrive, onDone when finished.
+export async function askQuestionStream(
+  query: string,
+  onToken: (token: string) => void,
+  onSources: (sources: AnswerSource[]) => void,
+  onDone: () => void,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/answer-stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, match_count: 5 }),
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error("Streaming request failed");
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // SSE messages are separated by double newlines
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() ?? ""; // keep the last incomplete part in buffer
+
+    for (const part of parts) {
+      const line = part.trim();
+      if (!line.startsWith("data: ")) continue;
+
+      const json = line.slice(6); // strip "data: "
+      try {
+        const event = JSON.parse(json);
+        if (event.type === "answer") onToken(event.content);
+        else if (event.type === "sources") onSources(event.sources);
+        else if (event.type === "done") onDone();
+      } catch {
+        // ignore malformed lines
+      }
+    }
+  }
+}
