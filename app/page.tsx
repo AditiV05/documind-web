@@ -4,8 +4,10 @@ import { useState } from "react";
 import {
   uploadPDF,
   extractAndChunk,
+  askQuestion,
   UploadResponse,
   ChunkResponse,
+  AnswerResponse,
 } from "./lib/api";
 
 export default function Home() {
@@ -15,6 +17,9 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<AnswerResponse | null>(null);
+  const [isAsking, setIsAsking] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0] ?? null;
@@ -50,6 +55,21 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Processing failed");
     } finally {
       setIsProcessing(false);
+    }
+  }
+
+  async function handleAsk() {
+    if (!question.trim()) return;
+    setIsAsking(true);
+    setError(null);
+    setAnswer(null);
+    try {
+      const result = await askQuestion(question);
+      setAnswer(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Request failed");
+    } finally {
+      setIsAsking(false);
     }
   }
 
@@ -110,6 +130,43 @@ export default function Home() {
               </p>
               <p>Avg chunk size: {chunkResult.avg_chunk_size} chars</p>
               <p>Status: {chunkResult.status}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Step 3: ask a question */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mt-4">
+          <h2 className="font-semibold mb-3">3. Ask a Question</h2>
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAsk()}
+            placeholder="Ask something about the uploaded document..."
+            className="block w-full text-sm border border-gray-300 rounded px-3 py-2 mb-4"
+          />
+          <button
+            onClick={handleAsk}
+            disabled={!question.trim() || isAsking}
+            className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-40"
+          >
+            {isAsking ? "Thinking..." : "Ask"}
+          </button>
+
+          {answer && (
+            <div className="mt-4 text-sm bg-gray-50 border border-gray-200 rounded p-4">
+              <p className="whitespace-pre-wrap">{answer.answer}</p>
+              {answer.sources.length > 0 && (
+                <p className="mt-3 text-xs text-gray-500">
+                  Sources: {answer.sources.length} chunk
+                  {answer.sources.length > 1 ? "s" : ""} (page
+                  {answer.sources.length > 1 ? "s" : ""}{" "}
+                  {[...new Set(answer.sources.map((s) => s.page_number))].join(
+                    ", ",
+                  )}
+                  )
+                </p>
+              )}
             </div>
           )}
         </div>

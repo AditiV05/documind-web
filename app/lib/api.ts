@@ -52,3 +52,34 @@ export async function extractAndChunk(
   }
   return res.json();
 }
+
+// Shape of a source in the answer response
+export interface AnswerSource {
+  id: string;
+  document_id: string;
+  page_number: number;
+  chunk_index: number;
+}
+
+// Shape of the response from POST /answer
+export interface AnswerResponse {
+  query: string;
+  answer: string;
+  sources: AnswerSource[];
+}
+
+// Ask a question — full RAG: retrieve + generate
+export async function askQuestion(query: string): Promise<AnswerResponse> {
+  const res = await fetch(`${API_BASE}/answer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, match_count: 5 }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Request failed" }));
+    throw new Error(err.detail || "Request failed");
+  }
+
+  return res.json();
+}
