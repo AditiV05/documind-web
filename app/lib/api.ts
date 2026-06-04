@@ -1,5 +1,5 @@
 // Base URL of the FASTAPI backend
-const API_BASE = "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 //shape of the response from the POST /upload
 export interface UploadResponse {
