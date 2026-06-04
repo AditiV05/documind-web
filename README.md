@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# documind-web
 
-## Getting Started
+Next.js frontend for **DocuMind**, a production-style RAG application for document Q&A.
 
-First, run the development server:
+🔗 **Live app:** [documind-web-mu.vercel.app](https://documind-web-mu.vercel.app)
+🔗 **Backend repo:** [documind-api](https://github.com/AditiV05/documind-api)
+
+---
+
+## What it does
+
+A simple three-step interface:
+
+1. **Upload PDF** — sends a PDF to the backend for storage and processing
+2. **Extract & Chunk** — triggers extraction, chunking, and embedding generation
+3. **Ask a Question** — sends a query and streams back a citation-grounded answer via Server-Sent Events
+
+---
+
+## Tech stack
+
+- **Framework:** Next.js 15 (App Router) + TypeScript
+- **Styling:** Tailwind CSS
+- **Deploy:** Vercel
+- **Backend:** [documind-api](https://github.com/AditiV05/documind-api) — FastAPI on Railway
+
+---
+
+## Local setup
+
+**Prerequisites:** Node.js 18+, the [documind-api](https://github.com/AditiV05/documind-api) backend running (locally or deployed).
 
 ```bash
+# Clone and enter
+git clone https://github.com/AditiV05/documind-web.git
+cd documind-web
+
+# Install
+npm install
+
+# Configure
+cp .env.example .env.local
+# Set NEXT_PUBLIC_API_BASE to your backend URL
+# (defaults to http://localhost:8000 if unset)
+
+# Run
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+| Variable               | Description                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_BASE` | URL of the documind-api backend (defaults to `http://localhost:8000`) |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+documind-web/
+├── app/
+│   ├── page.tsx          # Main UI (3 cards: Upload, Extract, Ask)
+│   ├── lib/
+│   │   └── api.ts        # Backend API client (with SSE streaming)
+│   └── layout.tsx
+├── public/
+├── package.json
+└── next.config.js
+```
