@@ -72,6 +72,7 @@ export default function Home() {
     try {
       await askQuestionStream(
         question,
+        uploadResult?.id ?? null,
         (token) => setStreamedAnswer((prev) => prev + token),
         (sources) => setStreamedSources(sources),
         () => setIsAsking(false),
@@ -156,7 +157,7 @@ export default function Home() {
           />
           <button
             onClick={handleAsk}
-            disabled={!question.trim() || isAsking}
+            disabled={!question.trim() || isAsking || !chunkResult}
             className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-40"
           >
             {isAsking ? "Thinking..." : "Ask"}

@@ -88,6 +88,7 @@ export async function askQuestion(query: string): Promise<AnswerResponse> {
 // onSources when sources arrive, onDone when finished.
 export async function askQuestionStream(
   query: string,
+  documentId: string | null,
   onToken: (token: string) => void,
   onSources: (sources: AnswerSource[]) => void,
   onDone: () => void,
@@ -95,7 +96,7 @@ export async function askQuestionStream(
   const res = await fetch(`${API_BASE}/answer-stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, match_count: 5 }),
+    body: JSON.stringify({ query, match_count: 5, document_id: documentId }),
   });
 
   if (!res.ok || !res.body) {
