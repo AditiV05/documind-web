@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   uploadPDF,
   extractAndChunk,
@@ -64,6 +65,7 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
+  const [askedQuestion, setAskedQuestion] = useState("");
   const [answer, setAnswer] = useState<AnswerResponse | null>(null);
   const [isAsking, setIsAsking] = useState(false);
   const [streamedAnswer, setStreamedAnswer] = useState("");
@@ -77,6 +79,7 @@ export default function Home() {
     setAnswer(null);
     setStreamedAnswer("");
     setStreamedSources([]);
+    setAskedQuestion("");
     setError(null);
   }
 
@@ -116,6 +119,7 @@ export default function Home() {
     setAnswer(null);
     setStreamedAnswer("");
     setStreamedSources([]);
+    setAskedQuestion(q);
     setQuestion("");
     try {
       await askQuestionStream(
@@ -138,6 +142,7 @@ export default function Home() {
       ? "active"
       : "pending";
   const step3: StepState = chunkResult ? "active" : "pending";
+  const cleanAnswer = streamedAnswer.replace(/\s*\[\d+(?:,\s*\d+)*\]/g, "");
 
   return (
     <main className="min-h-screen bg-stone-50 text-stone-900">
@@ -260,18 +265,23 @@ export default function Home() {
                 className="mt-5 rounded-xl bg-stone-50 p-5"
                 aria-live="polite"
               >
+                {askedQuestion && (
+                  <p className="mb-3 text-sm font-medium text-stone-700">
+                    {askedQuestion}
+                  </p>
+                )}
                 {isAsking && !streamedAnswer ? (
                   <p className="flex items-center gap-2 text-sm text-stone-500">
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-stone-300 border-t-indigo-600" />
                     Searching your document…
                   </p>
                 ) : (
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800">
-                    {streamedAnswer}
+                  <div className="text-sm leading-relaxed text-stone-800 [&_ol]:mt-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:mt-2 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-1 [&_p]:mt-2 [&_strong]:font-medium [&_code]:rounded [&_code]:bg-stone-200 [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs">
+                    <ReactMarkdown>{cleanAnswer}</ReactMarkdown>
                     {isAsking && (
                       <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse bg-indigo-500 align-middle" />
                     )}
-                  </p>
+                  </div>
                 )}
                 {streamedSources.length > 0 && (
                   <p className="mt-4 border-t border-stone-200 pt-3 text-xs text-stone-500">
