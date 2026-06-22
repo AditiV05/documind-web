@@ -133,3 +133,15 @@ export async function askQuestionStream(
     }
   }
 }
+
+// Delete a document immediately (storage file, chunks, and row)
+export async function deleteDocument(documentId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/documents/${documentId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Delete failed" }));
+    throw new Error(err.detail || "Delete failed");
+  }
+}

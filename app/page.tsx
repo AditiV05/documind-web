@@ -1,12 +1,12 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   uploadPDF,
   extractAndChunk,
   askQuestion,
   askQuestionStream,
+  deleteDocument,
   UploadResponse,
   ChunkResponse,
   AnswerResponse,
@@ -59,6 +59,7 @@ function StepBadge({ n, state }: { n: number; state: StepState }) {
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
   const [chunkResult, setChunkResult] = useState<ChunkResponse | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,6 +71,7 @@ export default function Home() {
   const [isAsking, setIsAsking] = useState(false);
   const [streamedAnswer, setStreamedAnswer] = useState("");
   const [streamedSources, setStreamedSources] = useState<AnswerSource[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0] ?? null;
@@ -135,6 +137,28 @@ export default function Home() {
     }
   }
 
+  async function handleDelete() {
+    if (!uploadResult) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await deleteDocument(uploadResult.id);
+      setFile(null);
+      setUploadResult(null);
+      setChunkResult(null);
+      setAnswer(null);
+      setStreamedAnswer("");
+      setStreamedSources([]);
+      setAskedQuestion("");
+      setQuestion("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   const step1: StepState = uploadResult ? "done" : "active";
   const step2: StepState = chunkResult
     ? "done"
@@ -180,6 +204,7 @@ export default function Home() {
               <h2 className="font-medium">Upload PDF</h2>
             </div>
             <input
+              ref={fileInputRef}
               type="file"
               accept="application/pdf"
               onChange={handleFileChange}
@@ -194,12 +219,21 @@ export default function Home() {
               {isUploading ? "Uploading…" : "Upload"}
             </button>
             {uploadResult && (
-              <p className="mt-4 text-sm text-stone-500">
-                <span className="font-medium text-stone-700">
-                  {uploadResult.filename}
-                </span>{" "}
-                uploaded.
-              </p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-sm text-stone-500">
+                  <span className="font-medium text-stone-700">
+                    {uploadResult.filename}
+                  </span>{" "}
+                  uploaded.
+                </p>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="shrink-0 rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isDeleting ? "Deleting…" : "Delete now"}
+                </button>
+              </div>
             )}
           </section>
 
@@ -299,6 +333,10 @@ export default function Home() {
             {error}
           </div>
         )}
+        <p className="mt-8 text-center text-xs text-stone-400">
+          Your document is private and automatically deleted after 30 minutes —
+          or delete it now anytime.
+        </p>
       </div>
     </main>
   );
