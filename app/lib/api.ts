@@ -59,6 +59,7 @@ export interface AnswerSource {
   document_id: string;
   page_number: number;
   chunk_index: number;
+  content: string;
 }
 
 // Shape of the response from POST /answer

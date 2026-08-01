@@ -318,10 +318,32 @@ export default function Home() {
                   </div>
                 )}
                 {streamedSources.length > 0 && (
-                  <p className="mt-4 border-t border-stone-200 pt-3 text-xs text-stone-500">
-                    {streamedSources.length} source
-                    {streamedSources.length > 1 ? "s" : ""}
-                  </p>
+                  <details className="mt-4 border-t border-stone-200 pt-3">
+                    <summary className="cursor-pointer list-none text-xs text-stone-500 hover:text-stone-700">
+                      {streamedSources.length} source
+                      {streamedSources.length > 1 ? "s" : ""}
+                      <span className="ml-1 text-stone-400">
+                        · click to view
+                      </span>
+                    </summary>
+                    <ol className="mt-3 space-y-3">
+                      {streamedSources.map((source, i) => (
+                        <li
+                          key={source.id ?? i}
+                          className="rounded-lg border border-stone-200 bg-white p-3"
+                        >
+                          <p className="mb-1 text-xs font-medium text-indigo-600">
+                            Page {source.page_number}
+                          </p>
+                          <p className="text-xs leading-relaxed text-stone-600">
+                            {source.content && source.content.length > 240
+                              ? source.content.slice(0, 240).trim() + "…"
+                              : source.content}
+                          </p>
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
                 )}
               </div>
             )}
