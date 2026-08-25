@@ -126,8 +126,16 @@ export async function askQuestionStream(
       try {
         const event = JSON.parse(json);
         if (event.type === "answer") onToken(event.content);
-        else if (event.type === "sources") onSources(event.sources);
-        else if (event.type === "done") onDone();
+        else if (event.type === "sources") {
+          console.log(
+            "SOURCES FROM SERVER:",
+            event.sources.map(
+              (s: AnswerSource) =>
+                "p" + s.page_number + ": " + (s.content || "").slice(0, 40),
+            ),
+          );
+          onSources(event.sources);
+        } else if (event.type === "done") onDone();
       } catch {
         // ignore malformed lines
       }
