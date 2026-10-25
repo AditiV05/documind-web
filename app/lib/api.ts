@@ -32,7 +32,7 @@ export async function uploadPDF(file: File): Promise<UploadResponse> {
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: "Uplaod failed" }));
+    const err = await res.json().catch(() => ({ detail: "Upload failed" }));
     throw new Error(err.detail || "Upload failed");
   }
   return res.json();
@@ -86,27 +86,31 @@ export async function askQuestion(query: string): Promise<AnswerResponse> {
 }
 
 // Ask a question with streaming. Calls onToken for each text token,
-// onSources when sources arrive, onDone when finished.
+// onSources when sources arrive, onDone when finished. Pass a signal to cancel.
 export async function askQuestionStream(
   query: string,
   documentId: string | null,
   onToken: (token: string) => void,
   onSources: (sources: AnswerSource[]) => void,
   onDone: () => void,
+  signal?: AbortSignal,
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/answer-stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, match_count: 5, document_id: documentId }),
+    signal,
   });
 
   if (!res.ok || !res.body) {
-    throw new Error("Streaming request failed");
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Couldn't get an answer. Please try again.");
   }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let finished = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -126,21 +130,19 @@ export async function askQuestionStream(
       try {
         const event = JSON.parse(json);
         if (event.type === "answer") onToken(event.content);
-        else if (event.type === "sources") {
-          console.log(
-            "SOURCES FROM SERVER:",
-            event.sources.map(
-              (s: AnswerSource) =>
-                "p" + s.page_number + ": " + (s.content || "").slice(0, 40),
-            ),
-          );
-          onSources(event.sources);
-        } else if (event.type === "done") onDone();
+        else if (event.type === "sources") onSources(event.sources);
+        else if (event.type === "done") {
+          finished = true;
+          onDone();
+        }
       } catch {
         // ignore malformed lines
       }
     }
   }
+
+  // The stream closed without a "done" event (e.g. the server dropped the connection)
+  if (!finished) throw new Error("The answer was cut off. Please try again.");
 }
 
 // Delete a document immediately (storage file, chunks, and row)
