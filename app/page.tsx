@@ -15,6 +15,7 @@ import {
   formatBytes,
 } from "./components/UploadPanel";
 import { ChatMessage, Message } from "./components/ChatMessage";
+import { ThemeToggle } from "./components/ThemeToggle";
 import {
   FileIcon,
   SendIcon,
@@ -221,12 +222,13 @@ export default function Home() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
             <FileIcon className="h-5 w-5" />
           </span>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold tracking-tight">DocuMind</h1>
             <p className="text-xs text-stone-500 dark:text-stone-400">
               Ask questions about any PDF, with answers cited to the page.
             </p>
           </div>
+          <ThemeToggle />
         </header>
 
         {!isReady ? (
